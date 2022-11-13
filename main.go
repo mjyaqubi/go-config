@@ -2,8 +2,8 @@ package config
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"strings"
 	"sync"
@@ -41,7 +41,8 @@ func (config *Config) AppendFile(path string) {
 
 	jsonFile, err := os.Open(path)
 	if err != nil {
-		fmt.Println(err)
+		log.Print(err)
+		return
 	}
 
 	defer jsonFile.Close()
@@ -58,7 +59,7 @@ func (config *Config) Get(key string) interface{} {
 	return getValue(keys, config.configs)
 }
 
-// Keys get all the keys by specifiying a key or empty string to get the keys of root
+// Keys get all the keys by specifying a key or empty string to get the keys of root
 func (config *Config) Keys(key string) []string {
 	var configs interface{}
 
