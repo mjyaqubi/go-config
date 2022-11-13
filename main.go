@@ -55,12 +55,20 @@ func (config *Config) AppendFile(path string) {
 
 // Get get the config by key
 func (config *Config) Get(key string) interface{} {
+	if config.configs == nil {
+		return nil
+	}
+
 	var keys = strings.Split(key, ".")
 	return getValue(keys, config.configs)
 }
 
 // Keys get all the keys by specifying a key or empty string to get the keys of root
 func (config *Config) Keys(key string) []string {
+	if config.configs == nil {
+		return nil
+	}
+
 	var configs interface{}
 
 	if key != "" {
