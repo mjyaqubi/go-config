@@ -2,8 +2,8 @@ package config
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"strings"
 	"sync"
@@ -41,25 +41,43 @@ func (config *Config) AppendFile(path string) {
 
 	jsonFile, err := os.Open(path)
 	if err != nil {
-		fmt.Println(err)
+		log.Print(err)
+		return
 	}
 
 	defer jsonFile.Close()
 
-	byteValue, _ := ioutil.ReadAll(jsonFile)
-	json.Unmarshal(byteValue, &newConfigs)
+	byteValue, err := ioutil.ReadAll(jsonFile)
+	if err != nil {
+		log.Printf("read file %s: something went wrong while reading the file", path)
+		return
+	}
+
+	err = json.Unmarshal(byteValue, &newConfigs)
+	if err != nil {
+		log.Printf("parse %s: invalid configuration file format or structure", path)
+		return
+	}
 
 	config.configs = mergeConfigs(config.configs, newConfigs)
 }
 
 // Get get the config by key
 func (config *Config) Get(key string) interface{} {
+	if config.configs == nil {
+		return nil
+	}
+
 	var keys = strings.Split(key, ".")
 	return getValue(keys, config.configs)
 }
 
-// Keys get all the keys by specifiying a key or empty string to get the keys of root
+// Keys get all the keys by specifying a key or empty string to get the keys of root
 func (config *Config) Keys(key string) []string {
+	if config.configs == nil {
+		return nil
+	}
+
 	var configs interface{}
 
 	if key != "" {
