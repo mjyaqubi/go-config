@@ -1,4 +1,4 @@
-package main
+package config
 
 import (
 	"encoding/json"
@@ -6,32 +6,38 @@ import (
 	"io/ioutil"
 	"os"
 	"strings"
+	"sync"
 )
 
-var configs map[string]interface{}
-
-func main() {
-
-	loadConfigs([]string{"config/config.json", "config/config.local.json"})
-
-	fmt.Println(configs)
-
-	fmt.Println(get("database.host"))
-	fmt.Println(get("something"))
-	fmt.Println(get("something.ABC"))
-	fmt.Println(get("something.1"))
-	fmt.Println(get("something.2"))
-
+type Config struct {
+	configs map[string]interface{}
 }
 
-func loadConfigs(paths []string) {
-	for _, s := range paths {
-		loadConfig(s)
+var config *Config
+
+var once sync.Once
+
+// New create a new or get the existing config instance (Singleton)
+func New() *Config {
+	// Check for the config if not initiated
+	if config == nil {
+		// Using once from sync library to make sure the config initiated once
+		once.Do(func() { config = &Config{} })
+	}
+
+	return config
+}
+
+// AppendFiles append multiple config files data to the configs
+func (config *Config) AppendFiles(paths ...string) {
+	for _, path := range paths {
+		config.AppendFile(path)
 	}
 }
 
-func loadConfig(path string) {
-	var config map[string]interface{}
+// AppendFile append config file data to the configs
+func (config *Config) AppendFile(path string) {
+	var newConfigs map[string]interface{}
 
 	jsonFile, err := os.Open(path)
 	if err != nil {
@@ -41,37 +47,64 @@ func loadConfig(path string) {
 	defer jsonFile.Close()
 
 	byteValue, _ := ioutil.ReadAll(jsonFile)
-	json.Unmarshal(byteValue, &config)
+	json.Unmarshal(byteValue, &newConfigs)
 
-	configs = mergeConfig(configs, config)
+	config.configs = mergeConfigs(config.configs, newConfigs)
 }
 
-func mergeConfig[K comparable, V any](maps ...map[K]V) map[K]V {
-	out := map[K]V{}
+// Get get the config by key
+func (config *Config) Get(key string) interface{} {
+	var keys = strings.Split(key, ".")
+	return getValue(keys, config.configs)
+}
 
-	for _, m := range maps {
-		for k, v := range m {
-			out[k] = v
-		}
+// Keys get all the keys by specifiying a key or empty string to get the keys of root
+func (config *Config) Keys(key string) []string {
+	var configs interface{}
+
+	if key != "" {
+		var keys = strings.Split(key, ".")
+		configs = getValue(keys, config.configs)
+	} else {
+		configs = config.configs
 	}
 
-	return out
+	return geKeys(configs.(map[string]interface{}))
 }
 
-func get(key string) interface{} {
-	var keySplited = strings.Split(key, ".")
+// Get the keys of a map
+func geKeys[K comparable, V any](in map[K]V) []K {
+	result := make([]K, 0, len(in))
 
-	return getSub(keySplited, configs)
+	for k := range in {
+		result = append(result, k)
+	}
+
+	return result
 }
 
-func getSub(keys []string, subConfig map[string]interface{}) interface{} {
+// Get the config by array of the key that shows the depth
+func getValue(keys []string, configs map[string]interface{}) interface{} {
 	if len(keys) < 2 {
-		return subConfig[keys[0]]
+		return configs[keys[0]]
 	}
 
-	if val, ok := subConfig[keys[0]]; ok {
-		return getSub(keys[1:], val.(map[string]interface{}))
+	if subConfigs, ok := configs[keys[0]]; ok {
+		return getValue(keys[1:], subConfigs.(map[string]interface{}))
 	}
 
 	return nil
+}
+
+// Merging the existing config with the new configs
+func mergeConfigs[K comparable, V any](maps ...map[K]V) map[K]V {
+	result := map[K]V{}
+
+	for _, m := range maps {
+		for k, v := range m {
+			result[k] = v
+		}
+	}
+
+	return result
 }
