@@ -1,0 +1,25 @@
+{
+  "environment": "development",
+  "database": {
+    "host": "127.0.0.1",
+    "port": 3306,
+    "username": "divido",
+    "password": "divido"
+  },
+  "cache": {
+    "redis": {
+      "host": "127.0.0.1",
+      "port": 6379
+    }
+  },
+  "something": {
+    "ABC": {
+      "DEF": {
+        "GHI": {
+          "JKL": "2345678"
+        }
+      }
+    },
+    "1": 2
+  }
+}
