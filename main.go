@@ -47,7 +47,12 @@ func (config *Config) AppendFile(path string) {
 
 	defer jsonFile.Close()
 
-	byteValue, _ := ioutil.ReadAll(jsonFile)
+	byteValue, err := ioutil.ReadAll(jsonFile)
+	if err != nil {
+		log.Printf("read file %s: something went wrong while reading the file", path)
+		return
+	}
+
 	err = json.Unmarshal(byteValue, &newConfigs)
 	if err != nil {
 		log.Printf("parse %s: invalid configuration file format or structure", path)
