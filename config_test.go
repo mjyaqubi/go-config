@@ -44,7 +44,7 @@ var configExample = map[string]interface{}{
 
 var configEmptyExample = make(map[string]interface{})
 
-func TestNew(t *testing.T) {
+func TestـNew(t *testing.T) {
 	t.Run("create new config instance", func(t *testing.T) {
 		config := New()
 
