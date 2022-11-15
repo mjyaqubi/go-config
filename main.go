@@ -103,6 +103,10 @@ func geKeys[K comparable, V any](in map[K]V) []K {
 
 // Get the config by array of the key that shows the depth
 func getValue(keys []string, configs map[string]interface{}) interface{} {
+	if keys == nil {
+		return nil
+	}
+
 	if len(keys) < 2 {
 		return configs[keys[0]]
 	}
