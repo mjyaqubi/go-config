@@ -3,6 +3,7 @@ package config
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"os"
@@ -38,29 +39,20 @@ func (config *Config) AppendFiles(paths ...string) {
 
 // AppendFile append config file data to the configs
 func (config *Config) AppendFile(path string) {
-	var newConfigs map[string]interface{}
-
 	jsonFile, err := os.Open(path)
 	if err != nil {
 		log.Print(err)
 		return
 	}
-
 	defer jsonFile.Close()
 
-	byteValue, err := ioutil.ReadAll(jsonFile)
+	newConfigs, err := readAndParseFile(jsonFile)
 	if err != nil {
-		log.Printf("read file %s: something went wrong while reading the file", path)
+		log.Printf("read file %s: %s", path, err)
 		return
 	}
 
-	err = json.Unmarshal(byteValue, &newConfigs)
-	if err != nil {
-		log.Printf("parse %s: invalid configuration file format or structure", path)
-		return
-	}
-
-	config.configs = mergeConfigs(config.configs, newConfigs)
+	config.configs = mergeConfigs(config.configs, newConfigs.(map[string]interface{}))
 }
 
 // Get get the config by key
@@ -134,4 +126,20 @@ func mergeConfigs[K comparable, V any](maps ...map[K]V) map[K]V {
 	}
 
 	return result
+}
+
+func readAndParseFile(file io.Reader) (interface{}, error) {
+	var newConfigs map[string]interface{}
+
+	byteValue, err := ioutil.ReadAll(file)
+	if err != nil {
+		return nil, fmt.Errorf("something went wrong while reading the file")
+	}
+
+	err = json.Unmarshal(byteValue, &newConfigs)
+	if err != nil {
+		return nil, fmt.Errorf("invalid configuration file format or structure")
+	}
+
+	return newConfigs, nil
 }
