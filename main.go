@@ -2,6 +2,7 @@ package config
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -87,11 +88,15 @@ func (config *Config) Keys(key string) []string {
 		configs = config.configs
 	}
 
-	return geKeys(configs.(map[string]interface{}))
+	if fmt.Sprintf("%T", configs) != "map[string]interface {}" {
+		return []string{}
+	}
+
+	return getKeys(configs.(map[string]interface{}))
 }
 
 // Get the keys of a map
-func geKeys[K comparable, V any](in map[K]V) []K {
+func getKeys[K comparable, V any](in map[K]V) []K {
 	result := make([]K, 0, len(in))
 
 	for k := range in {
