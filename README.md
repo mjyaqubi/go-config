@@ -61,3 +61,9 @@ func main() {
 }
 
 ```
+
+## Improvement
+- Covering more type of config files such as YAML
+- Auto load the config file base on a config path and environment (path/prefix.env.type)
+- Understanding the default config and replace the environment config over the default config (config.json, config.local.json)
+- Ability to extend/modify the configs in runtime
